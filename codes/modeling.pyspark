@@ -1,0 +1,67 @@
+-- 1. python configuration
+pip install --upgrade pip
+pip install numpy
+# then to avoid "ImportError: cannot import name multiarray" install nose
+pip install nose
+
+-- 2. env configuration
+a. add all edge nodes as HDFS gateways
+b. add all edge & datanodes as spark gateways
+
+http://apache-spark-user-list.1001560.n3.nabble.com/LZO-support-in-Spark-1-0-0-nothing-seems-to-work-td14494.html
+use "--driver-library-path /opt/cloudera/parcels/GPLEXTRAS/lib/hadoop/lib/native/" with spark-submit to avoid "Could not load native gpl library"
+
+
+-- 3. prediction
+pyspark --driver-library-path /opt/cloudera/parcels/GPLEXTRAS/lib/hadoop/lib/native --master yarn-client  --executor-cores 1 --num-executors 3 --executor-memory 512M 
+
+#load file
+inFile = sc.textFile("hdfs://nameservice1//user/etl/temp/TrainingTweetsScore.csv")
+inFile.take(3)
+
+#remove header
+header = inFile.take(1)[0]
+rows = inFile.filter(lambda line: line != header)
+
+#convert to LabeledPoint, 1st column is the label/target
+from pyspark.mllib.linalg import SparseVector
+from pyspark.mllib.linalg import Vectors
+from pyspark.mllib.regression import LabeledPoint
+
+dataLP = rows.map( lambda line : line.split(',') ).map( lambda parts : [float(i) for i in parts] ).map( lambda parts : LabeledPoint(parts[0], Vectors.dense(parts[1:])) )
+
+dataLP.take(3)
+
+#save data as in a SVM File
+from pyspark.mllib.util import MLUtils
+MLUtils.saveAsLibSVMFile(dataLP, "hdfs://nameservice1/user/etl/temp/data.svm")
+
+# read from SVM file and cache it
+data = MLUtils.loadLibSVMFile(sc, "hdfs://nameservice1/user/etl/temp/data.svm").cache()
+data.take(3)
+
+# split into train and test 
+(trainingData, testData) = data.randomSplit([0.7, 0.3])
+
+# build the model (random forest)
+# here numClasses = max(label)+1, so in this case it is 2+1
+from pyspark.mllib.tree import RandomForest, RandomForestModel
+model = RandomForest.trainClassifier(trainingData, numClasses=3, categoricalFeaturesInfo={},
+                                     numTrees=100, featureSubsetStrategy="auto",
+                                     impurity='gini')
+
+									 
+# Evaluate model on test instances and compute test error
+predictions = model.predict(testData.map(lambda x: x.features))
+labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
+testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(testData.count())
+print('Test Error = ' + str(testErr))
+# Test Error = 0.306209850107 , which is similar as model in R
+print(model.toDebugString())
+
+# Save and load model
+model.save(sc, "hdfs://nameservice1/user/etl/temp/twitterSentimentRF.model")
+from pyspark.mllib.tree import RandomForest, RandomForestModel
+twitterSentimentRF = RandomForestModel.load(sc, "hdfs://nameservice1/user/etl/temp/twitterSentimentRF.model")
+
+									 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="example" version="1.5">
+
+ <fields>
+
+   <field name="_version_" type="tlong" indexed="true" stored="true"/>
+
+   <field name="id" type="string" indexed="true" stored="true" required="true" />
+   <field name="created_at" type="tdate" indexed="true" stored="true" required="false" multiValued="false"/>
+   <field name="date_id" type="tlong" indexed="true" stored="true" required="false" multiValued="false" />
+   <field name="hour_id" type="tlong" indexed="true" stored="true" required="false" multiValued="false" />
+   <field name="text" type="text_general_ci" indexed="true" stored="true" required="true" multiValued="false" />
+   <field name="sentiment" type="tint" indexed="true" stored="true" required="true" multiValued="false" />
+
+ </fields>
+
+   <uniqueKey>id</uniqueKey>
+
+  <types>
+
+    <!-- The StrField type is not analyzed, but indexed/stored verbatim. -->
+	
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
+
+    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
+	
+    <fieldType name="tdate" class="solr.TrieDateField" precisionStep="6" positionIncrementGap="0"/>
+
+    <fieldType name="text_general_ci" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+
+ </types>
+
+</schema>

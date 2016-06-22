@@ -1,0 +1,86 @@
+1. Copy json sarde jar to /var/lib/hive/jars/ and renamed to hive-json-serdes-1.0-SNAPSHOT.jar and created link as hive-json-serdes.jar
+[https://github.com/cloudera/cdh-twitter-example]
+
+2. Create external table pointing to an hdfs location:
+
+create database prod_internet_db;
+use prod_internet_db;
+
+ADD JAR /var/lib/hive/jars/hive-json-serdes.jar;
+
+CREATE EXTERNAL TABLE stg_malaysia_tweets (
+  id BIGINT,
+  created_at STRING,
+  source STRING,
+  favorited BOOLEAN,
+  retweet_count INT,
+  entities STRUCT<
+    urls:ARRAY<STRUCT<expanded_url:STRING>>,
+    user_mentions:ARRAY<STRUCT<screen_name:STRING,name:STRING>>,
+    hashtags:ARRAY<STRUCT<text:STRING>> >,
+  text STRING,
+  user STRUCT<
+    screen_name: STRING,
+    name: STRING,
+	description: STRING,
+    friends_count: INT,
+    followers_count: INT,
+    statuses_count: INT,
+    verified: BOOLEAN,
+    utc_offset: INT,
+    time_zone: STRING,
+	location: STRING >,
+  place STRUCT<
+    full_name: STRING,
+    name: STRING,
+    country: STRING,
+    country_code: STRING,
+	place_type: STRING,
+	bounding_box: STRUCT<	
+	  type:STRING,
+	  coordinates: STRING> >,
+  in_reply_to_screen_name STRING
+) 
+ROW FORMAT SERDE 'com.cloudera.hive.serde.JSONSerDe'
+LOCATION '/user/etl/prod/internet/twitter/malaysia/staging';
+
+3. doanload/build solr-hive-serde.jar to /var/lib/hive/jars/
+[https://github.com/lucidworks/hive-solr]
+
+4. create final fact table parquet+snappy+partitioned
+
+CREATE TABLE f_malaysia_tweets (
+id BIGINT,
+created_at STRING,
+tweet_timestamp TIMESTAMP,
+source STRING,
+favorited BOOLEAN,
+retweet_count INT,
+entities_hashtags ARRAY<STRUCT<text:STRING>>,
+entities_user_mentions ARRAY<STRUCT<screen_name:STRING,name:STRING>>,
+entities_urls ARRAY<STRUCT<expanded_url:STRING>>,
+text STRING,
+user_screen_name STRING,
+user_name STRING,
+user_description STRING,
+user_friends_count INT,
+user_followers_count INT,
+user_statuses_count INT,
+user_verified BOOLEAN,
+user_utc_offset INT,
+user_time_zone STRING,
+user_location STRING,
+place_full_name STRING,
+place_name STRING,
+place_country STRING,
+place_country_code STRING,
+place_place_type STRING,
+place_bounding_box_type STRING,
+place_bounding_box_coordinates STRING,
+in_reply_to_screen_name STRING,
+HOUR_ID INT
+)
+PARTITIONED BY (MONTH_ID INT, DATE_ID INT)
+STORED AS PARQUET
+TBLPROPERTIES("parquet.compression"="SNAPPY");
+

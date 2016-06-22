@@ -1,0 +1,24 @@
+## import python script
+## ref : http://stackoverflow.com/questions/36838024/combining-spark-streaming-mllib
+import sentimentutil
+from sentimentutil import *
+ 
+############ load libraries & model ###########
+fileEngDict='./AFINN-111_eng.txt'
+fileMalayDict='./AFINN-111_malay.txt'
+affinEnglish=loadDict(fileEngDict, ',')
+affinMalay=loadDict(fileMalayDict, ',')
+
+from pyspark.mllib.tree import RandomForest, RandomForestModel
+twitterSentimentRF = RandomForestModel.load(sc, "hdfs://nameservice1/user/etl/temp/twitterSentimentRF.model")
+
+###############test#############
+
+sentence=['I @name@somename agreeeee :) :@  ?? #haha Ã°Å¸ââ¢ on Ã°111 #hoho hina 12!!! @@@$%', 'Hello!! bad day :(']
+samplerdd=sc.parallelize(sentence)
+scorerdd = samplerdd.map( lambda x : getFeatures(x, affinEnglish, affinMalay) ).map(lambda x : x.split(',')).map( lambda parts : [float(i) for i in parts] )
+scorerdd.collect()
+
+predictions = twitterSentimentRF.predict(scorerdd)
+predictions.collect()
+

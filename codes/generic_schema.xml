@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="example" version="1.5">
+
+ <fields>
+        
+   <field name="_version_" type="tlong" indexed="true" stored="true"/>
+   
+   <field name="id" type="string" indexed="true" stored="true" required="true" />
+   <field name="created_at" type="string" indexed="true" stored="true" required="false" multiValued="false"/>
+   <field name="source" type="string" indexed="true" stored="true" required="false" multiValued="false" /> 
+   <field name="favorited" type="boolean" indexed="true" stored="true" required="false" multiValued="false"/>
+   <field name="retweet_count" type="tlong" indexed="true" stored="true" required="false" multiValued="false" /> 
+   <field name="hashtags" type="text_commaDelimited_cs" indexed="true" stored="true" required="false" multiValued="false" /> 
+   
+   <field name="user_mentions_screen_name" type="text_commaDelimited_cs" indexed="true" stored="true" required="false" multiValued="false" /> 
+   <field name="user_mentions_name" type="text_commaDelimited_ci" indexed="true" stored="true" required="true" multiValued="false" /> 
+   
+   <field name="text" type="text_general_ci" indexed="true" stored="true" required="true" multiValued="false" /> 
+   <field name="user_screen_name" type="string" indexed="true" stored="true" required="true" multiValued="false" /> 
+   <field name="user_name" type="string_ci" indexed="true" stored="true" required="true" multiValued="false" /> 
+   <field name="user_location" type="string_ci" indexed="true" stored="true" required="false" multiValued="false" /> 
+   <field name="month_id" type="tlong" indexed="true" stored="true" required="false" multiValued="false" /> 
+   <field name="date_id" type="tlong" indexed="true" stored="true" required="false" multiValued="false" /> 
+   <field name="hour_id" type="tlong" indexed="true" stored="true" required="false" multiValued="false" /> 
+
+ </fields>
+
+   <uniqueKey>id</uniqueKey>
+
+  <types>
+
+    <!-- The StrField type is not analyzed, but indexed/stored verbatim. -->
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
+
+    <!-- boolean type: "true" or "false" -->
+    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+
+    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" positionIncrementGap="0"/>
+
+    <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="tdate" class="solr.TrieDateField" precisionStep="6" positionIncrementGap="0"/>
+
+    <fieldType name="text_general_ci" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+	
+    <fieldType name="text_commaDelimited_ci" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="solr.PatternTokenizerFactory" group="-1" pattern=","  />
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="solr.PatternTokenizerFactory" group="-1" pattern=","  />
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+
+    <fieldType name="text_commaDelimited_cs" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="solr.PatternTokenizerFactory" group="-1" pattern=","  />
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="solr.PatternTokenizerFactory" group="-1" pattern=","  />
+      </analyzer>
+    </fieldType>
+	
+	<fieldType name="string_ci" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+		<analyzer type="index">
+			<tokenizer class="solr.KeywordTokenizerFactory"/>
+			<filter class="solr.LowerCaseFilterFactory"/>
+		</analyzer>
+		<analyzer type="query">
+			<tokenizer class="solr.KeywordTokenizerFactory"/>
+			<filter class="solr.LowerCaseFilterFactory"/>
+		</analyzer>
+	</fieldType>
+
+ </types>
+
+</schema>

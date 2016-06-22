@@ -1,0 +1,33 @@
+<workflow-app name="wf__tweet__sentiments" xmlns="uri:oozie:workflow:0.5">
+  <global>
+            <configuration>
+                <property>
+                    <name>oozie.launcher.yarn.app.mapreduce.am.env</name>
+                    <value>SPARK_HOME=/opt/cloudera/parcels/CDH/lib/spark/</value>
+                </property>
+            </configuration>
+  </global>
+    <start to="ssh-067c"/>
+    <kill name="Kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <action name="ssh-14ad">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>etl@hadoopedgenode</host>
+            <command>/home/etl/SCRIPTS/tweetSentimentSubmit.sh</command>
+            <capture-output/>
+        </ssh>
+        <ok to="End"/>
+        <error to="Kill"/>
+    </action>
+    <action name="ssh-067c">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>etl@hadoopedgenode</host>
+            <command>/home/etl/SCRIPTS/KillTweetSentimentSubmit.sh</command>
+            <capture-output/>
+        </ssh>
+        <ok to="ssh-14ad"/>
+        <error to="Kill"/>
+    </action>
+    <end name="End"/>
+</workflow-app>

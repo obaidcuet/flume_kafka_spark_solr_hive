@@ -1,0 +1,62 @@
+<workflow-app name="wf__INTERNET__TWITTER_MALAYSIA" xmlns="uri:oozie:workflow:0.5">
+    <start to="ssh-dde3"/>
+    <kill name="Kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <action name="ssh-dde3">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>etl@hadoopedgenode</host>
+            <command>/home/etl/SCRIPTS/generic/arcInHDFS.py</command>
+            <args>/data01/internet/twitter/malaysia/logs/arcinhdfs/arc_from_hive_stg.log</args>
+            <args>-sp /user/etl/prod/internet/twitter/malaysia/staging/</args>
+            <args>-ap /user/etl/prod/internet/twitter/malaysia/archive/</args>
+            <capture-output/>
+        </ssh>
+        <ok to="ssh-feaa"/>
+        <error to="Kill"/>
+    </action>
+    <action name="ssh-feaa">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>etl@hadoopedgenode</host>
+            <command>/home/etl/SCRIPTS/generic/moveInHDFS.py</command>
+            <args>/data01/internet/twitter/malaysia/logs/moveinhdfs/move_to_hive_stg.log</args>
+            <args>-sp /user/etl/prod/internet/twitter/malaysia/flume/ </args>
+            <args>-dp /user/etl/prod/internet/twitter/malaysia/staging/</args>
+            <args>-n 50</args>
+            <args>-f &#39;^FlumeData\.\d+$&#39;</args>
+            <capture-output/>
+        </ssh>
+        <ok to="hive2-d41a"/>
+        <error to="Kill"/>
+    </action>
+    <action name="hive2-d41a" cred="hive2">
+        <hive2 xmlns="uri:oozie:hive2-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jdbc-url>jdbc:hive2://hiveserver2Host:10000/default</jdbc-url>
+            <script>/user/etl/prod/internet/twitter/malaysia/scripts/sql/f_malaysia_tweets.sql</script>
+        </hive2>
+        <ok to="ssh-d24d"/>
+        <error to="Kill"/>
+    </action>
+    <action name="ssh-d24d">
+        <ssh xmlns="uri:oozie:ssh-action:0.1">
+            <host>etl@sthdetl2-pvt</host>
+            <command>/home/etl/SCRIPTS/impalaInvalidateMetadata.sh</command>
+            <capture-output/>
+        </ssh>
+        <ok to="hive2-a203"/>
+        <error to="Kill"/>
+    </action>
+    <action name="hive2-a203" cred="hive2">
+        <hive2 xmlns="uri:oozie:hive2-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jdbc-url>jdbc:hive2://hiveserver2Host:10000/default</jdbc-url>
+            <script>/user/etl/prod/internet/twitter/malaysia/scripts/sql/idx_malaysia_tweets.sql</script>
+        </hive2>
+        <ok to="End"/>
+        <error to="Kill"/>
+    </action>
+    <end name="End"/>
+</workflow-app>

@@ -1,0 +1,63 @@
+
+-- ---------------------------------
+-- 1. generic collection for tweeter
+-- ---------------------------------
+a. generate solr collection directory
+solrctl instancedir --generate /var/lib/solr/collections/twitter_malaysia
+
+b. edit schema.xml
+## note: 1. field "id" should be there, otherwise it will show "sort param field can't be found: id and value cannot be null"
+## 		 2. field "_version_" should be there  	
+## 		 3. do not redefine fieldType "text", use other name like "text_stdtoken"
+## 		 4. fields with required="ture", cannot be NULL
+
+c. schema file location will be "/var/lib/solr/collections/twitter_malaysia/conf/schema.xml" 
+
+d. content of the schema file will be as attache [./code/generic_schema.xml]
+
+e. instantiate solr collection directory
+--new
+solrctl instancedir --create twitter_malaysia /var/lib/solr/collections/twitter_malaysia
+--update
+solrctl instancedir --update twitter_malaysia /var/lib/solr/collections/twitter_malaysia
+
+f. create the collection name "twitter_malaysia"
+--new
+solrctl collection --create twitter_malaysia -s 12 -r 2
+--update
+solrctl collection --reload twitter_malaysia
+
+g. to delete a collection
+solrctl collection --delete twitter_malaysia
+
+-- -----------------------------------
+-- 2. Collection for tweeter sentiment
+-- -----------------------------------
+a. generate solr collection directory
+solrctl instancedir --generate /var/lib/solr/collections/twitter_sentiment
+
+b. edit schema.xml
+## note: 1. field "id" should be there, otherwise it will show "sort param field can't be found: id and value cannot be null"
+## 		 2. field "_version_" should be there  	
+## 		 3. do not redefine fieldType "text", use other name like "text_stdtoken"
+## 		 4. fields with required="ture", cannot be NULL
+##       5. tdate should always be represented as UTC "YYYY-MM-DDThh:mm:ssZ", here putting Z mean UTC
+
+c. schema file location will be "/var/lib/solr/collections/twitter_sentiment/conf/schema.xml" 
+
+d. content of the schema file will be as attache [./code/sentiment_schema.xml]
+
+e. instantiate solr collection directory
+--new
+solrctl instancedir --create twitter_sentiment /var/lib/solr/collections/twitter_sentiment
+--update
+solrctl instancedir --update twitter_sentiment /var/lib/solr/collections/twitter_sentiment
+
+f. create the collection name "twitter_sentiment"
+--new
+solrctl collection --create twitter_malaysia -s 12 -r 2
+--update
+solrctl collection --reload twitter_sentiment
+
+g. to delete a collection
+solrctl collection --delete twitter_sentiment
